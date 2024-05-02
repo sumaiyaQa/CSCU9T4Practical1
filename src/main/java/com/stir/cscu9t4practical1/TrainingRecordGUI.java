@@ -3,9 +3,9 @@ package com.stir.cscu9t4practical1;
 
 import java.awt.*;
 import java.awt.event.*;
-import java.util.*;
+
 import javax.swing.*;
-import java.lang.Number;
+
 
 public class TrainingRecordGUI extends JFrame implements ActionListener {
 
@@ -27,6 +27,17 @@ public class TrainingRecordGUI extends JFrame implements ActionListener {
     private JLabel labdist = new JLabel(" Distance (km):");
     private JButton addR = new JButton("Add");
     private JButton lookUpByDate = new JButton("Look Up");
+    private JButton findAllByDate=new JButton("Find All By Date:");
+    private JButton removeEntry = new JButton("Remove");
+
+    private JComboBox<String> entryTypeComboBox;
+
+    private JPanel cycleEntryPanel = new JPanel();
+    private JPanel sprintEntryPanel = new JPanel();
+    private JPanel swimEntryPanel = new JPanel();
+
+
+
 
     private TrainingRecord myAthletes = new TrainingRecord();
 
@@ -70,31 +81,79 @@ public class TrainingRecordGUI extends JFrame implements ActionListener {
         lookUpByDate.addActionListener(this);
         add(outputArea);
         outputArea.setEditable(false);
+        add(findAllByDate);
+        findAllByDate.addActionListener(this);
+
+        add(removeEntry);
+        removeEntry.addActionListener(this); // Add action listener for the remove button
+
+
+
+        String[] entryTypes = {"Swim", "Cycle", "Sprint"};
+        entryTypeComboBox = new JComboBox<>(entryTypes);
+        add(entryTypeComboBox);
+        entryTypeComboBox.addActionListener(this);
+
+
+
+        add(cycleEntryPanel);
+        cycleEntryPanel.setVisible(false);
+
+
+        add(sprintEntryPanel);
+        sprintEntryPanel.setVisible(false);
+
+
+        add(swimEntryPanel);
+        swimEntryPanel.setVisible(false);
+
         setSize(720, 200);
         setVisible(true);
         blankDisplay();
 
-        // To save typing in new entries while testing, uncomment
-        // the following lines (or add your own test cases)
+
         
     } // constructor
+
 
     // listen for and respond to GUI events 
     public void actionPerformed(ActionEvent event) {
         String message = "";
+        String selectedEntryType = (String) entryTypeComboBox.getSelectedItem(); // Declare selectedEntryType here
         if (event.getSource() == addR) {
-            message = addEntry("generic");
+            String message2 = addEntry(selectedEntryType);
+            outputArea.setText(message2);
+            blankDisplay();
         }
         if (event.getSource() == lookUpByDate) {
             message = lookupEntry();
         }
+        if (event.getSource() == removeEntry) { // Check if the remove button is clicked
+            message = removeEntry();
+        }
+        if (event.getSource() == findAllByDate) {
+            String dayText = day.getText();
+            String monthText = month.getText();
+            String yearText = year.getText();
+
+            try {
+                int d = Integer.parseInt(dayText);
+                int m = Integer.parseInt(monthText);
+                int y = Integer.parseInt(yearText);
+
+                message = myAthletes.lookupEntries(d, m, y);
+            } catch (NumberFormatException e) {
+                message = "Please enter valid day, month, and year values.";
+            }
+        }
+
         outputArea.setText(message);
         blankDisplay();
     } // actionPerformed
 
     public String addEntry(String what) {
         String message = "Record added\n";
-        System.out.println("Adding "+what+" entry to the records");
+        System.out.println("Adding " + what + " entry to the records");
         String n = name.getText();
         int m = Integer.parseInt(month.getText());
         int d = Integer.parseInt(day.getText());
@@ -103,8 +162,25 @@ public class TrainingRecordGUI extends JFrame implements ActionListener {
         int h = Integer.parseInt(hours.getText());
         int mm = Integer.parseInt(mins.getText());
         int s = Integer.parseInt(secs.getText());
-        Entry e = new Entry(n, d, m, y, h, mm, s, km);
-        myAthletes.addEntry(e);
+
+        // Handle specific entry types
+        if (what.equals("Cycle")) {
+            String terrain = JOptionPane.showInputDialog("Enter Terrain:");
+            String tempo = JOptionPane.showInputDialog("Enter Tempo:");
+            CycleEntry e = new CycleEntry(n, d, m, y, h, mm, s, km, terrain, tempo);
+            myAthletes.addEntry(e);
+        } else if (what.equals("Swim")) {
+            String location = JOptionPane.showInputDialog("Enter Location:");
+            SwimEntry e = new SwimEntry(n, d, m, y, h, mm, s, km, location);
+            myAthletes.addEntry(e);
+        } else if (what.equals("Sprint")) {
+            int reps = Integer.parseInt(JOptionPane.showInputDialog("Enter Repetitions:"));
+            int rec = Integer.parseInt(JOptionPane.showInputDialog("Enter Recovery (minutes):"));
+            SprintEntry e = new SprintEntry(n, d, m, y, h, mm, s, km, reps, rec);
+            myAthletes.addEntry(e);
+        }
+
+
         return message;
     }
     
@@ -114,6 +190,23 @@ public class TrainingRecordGUI extends JFrame implements ActionListener {
         int y = Integer.parseInt(year.getText());
         outputArea.setText("looking up record ...");
         String message = myAthletes.lookupEntry(d, m, y);
+        return message;
+    }
+
+    public String removeEntry() {
+        String message = "";
+        String n = name.getText();
+        int m = Integer.parseInt(month.getText());
+        int d = Integer.parseInt(day.getText());
+        int y = Integer.parseInt(year.getText());
+
+        // Remove the entry from the training record
+        boolean removed = myAthletes.removeEntry(n, d, m, y);
+        if (removed) {
+            message = "Entry removed successfully.";
+        } else {
+            message = "Entry not found.";
+        }
         return message;
     }
 
@@ -140,5 +233,8 @@ public class TrainingRecordGUI extends JFrame implements ActionListener {
         dist.setText(String.valueOf(ent.getDistance()));
     }
 
-} // TrainingRecordGUI
+
+}
+
+ // TrainingRecordGUI
 
